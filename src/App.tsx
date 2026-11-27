@@ -1116,7 +1116,7 @@ const cropFactor = isCustomSensor
         <Box pt={2} pb={6} textAlign="center">
           <Button
             as="a"
-            href="https://github.com/jherr/depth-of-field"
+            href="https://github.com/cagdasinalaof/depth-of-field"
             target="_blank"
             rel="noreferrer"
             size="sm"
@@ -1127,6 +1127,9 @@ const cropFactor = isCustomSensor
           >
             {t.github}
           </Button>
+          <Text fontSize="xs" color={mutedText} mt={1}>
+            Ana yazar: Çağdaş İNAL · Orijinal proje: Jack Herrington (MIT)
+          </Text>
         </Box>
       </Box>
       </Box>
