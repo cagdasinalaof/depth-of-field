@@ -1178,7 +1178,16 @@ const cropFactor = isCustomSensor
             {t.github}
           </Button>
           <Text fontSize="xs" color={mutedText} mt={1}>
-            Ana yazar: Çağdaş İNAL · Orijinal proje: Jack Herrington (MIT)
+            Ana yazar: Çağdaş İNAL · Orijinal proje:{" "}
+            <a
+              href="https://github.com/jherr"
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              Jack Herrington
+            </a>{" "}
+            (MIT)
           </Text>
         </Box>
       </Box>
