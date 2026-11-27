@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { loadSetup, saveSetup } from "./setupState";
+import { loadSetup, parseSetup, saveSetup, serializeSetup } from "./setupState";
 import {
   Slider,
   SliderTrack,
@@ -36,6 +36,8 @@ import { DICT, DRONE_TEXT, LANGUAGES, fill, loadLang, saveLang, type Lang } from
 
 import PhotographyGraphic, { SUBJECTS } from "./PhotographyGraphic";
 import MonitorView from "./MonitorView";
+import ToolsPanel, { FoldCard, type Snapshot } from "./ToolsPanel";
+import { computeDof } from "./toolbox";
 import {
   SCENES,
   SHUTTER_SPEEDS,
@@ -139,6 +141,14 @@ const COMMON_SETUPS: {
     aperture: 2.0,
     idealDistance: 36,
     sensor: "Smartphone",
+  },
+  {
+    // Vlog: 16mm on APS-C (about 24mm eq.), f/2.8 kit-zoom class
+    name: "Vlog - APS-C 16mm",
+    focalLength: 16,
+    aperture: 2.8,
+    idealDistance: 48,
+    sensor: "APS-C",
   },
   {
     // DJI Mini 4 Pro class: 24mm eq. f/1.7 on 1/1.3" (6.67 mm actual)
@@ -333,6 +343,21 @@ const circleOfConfusionInMillimeters = isCustomSensor
 const cropFactor = isCustomSensor
   ? 43.27 / Math.sqrt(customSensorWidth ** 2 + customSensorHeight ** 2)
   : CIRCLES_OF_CONFUSION[sensor].cropFactor;
+
+  // Tools panel: the live DoF numbers and the A/B compare snapshot.
+  const [compareSnapshot, setCompareSnapshot] = useState<Snapshot | null>(null);
+  const currentDof: Snapshot = {
+    distanceMm: distanceToSubjectInInches * 25.4,
+    focalMm: focalLengthInMillimeters,
+    aperture,
+    sensor,
+    ...computeDof(
+      focalLengthInMillimeters,
+      aperture,
+      distanceToSubjectInInches * 25.4,
+      circleOfConfusionInMillimeters,
+    ),
+  };
 
   const hyperFocalDistanceInMM =
     focalLengthInMillimeters +
@@ -1112,6 +1137,31 @@ const cropFactor = isCustomSensor
           </Wrap>
         </Box>
 
+        <FoldCard title={lang === "tr" ? "Araçlar" : "Tools"} mt={4}>
+          <ToolsPanel
+            lang={lang}
+            current={currentDof}
+            cocMm={circleOfConfusionInMillimeters}
+            snapshot={compareSnapshot}
+            onSnapshot={setCompareSnapshot}
+            query={serializeSetup({
+              distanceInches: distanceToSubjectInInches,
+              focalMm: focalLengthInMillimeters,
+              aperture,
+              sensor,
+            })}
+            onApplyQuery={(q) => {
+              const s = parseSetup(q, Object.keys(CIRCLES_OF_CONFUSION));
+              if (s.distanceInches !== undefined) setDistanceToSubjectInInches(s.distanceInches);
+              if (s.focalMm !== undefined) setFocalLengthInMillimeters(s.focalMm);
+              if (s.aperture !== undefined) setAperture(s.aperture);
+              if (s.sensor !== undefined) setSensor(s.sensor);
+              resetGear();
+            }}
+            gearId={cameraId}
+          />
+        </FoldCard>
+
         {/* GitHub Footer */}
         <Box pt={2} pb={6} textAlign="center">
           <Button
@@ -1168,10 +1218,7 @@ const cropFactor = isCustomSensor
         />
 
         {/* Light & exposure controls */}
-        <Box mt={4} bg={cardBg} border="1px" borderColor={borderColor} rounded="lg" p={3}>
-          <Text fontSize="xs" fontWeight="semibold" color={mutedText} textTransform="uppercase" letterSpacing="wider" mb={2}>
-            {t.light}
-          </Text>
+        <FoldCard title={t.light} mt={4}>
           <Text fontSize="sm" mb={1}>{t.lightScene}</Text>
           <Select size="sm" value={sceneId} onChange={(e) => selectScene(e.target.value)}
             bg={nativeSelectStyles.bg} color={nativeSelectStyles.color} borderColor={nativeSelectStyles.borderColor} iconColor={nativeSelectStyles.iconColor} sx={nativeSelectStyles.sx}>
@@ -1390,7 +1437,7 @@ const cropFactor = isCustomSensor
               {fill(t.shake, shakeLimit)}
             </Badge>
           )}
-        </Box>
+        </FoldCard>
       </Box>
       </Flex>
     </>

@@ -148,6 +148,7 @@ export default function MonitorView({
         {title}
       </Text>
       <Box
+        data-monitor-svg=""
         bg="#111"
         p={{ base: 2, md: 3 }}
         rounded="xl"
