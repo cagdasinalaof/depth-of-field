@@ -290,14 +290,29 @@ const [customSensorHeight, setCustomSensorHeight] = useState(24);
     }
     applyLens(l);
   };
+  // Drop marks whose labels would collide on the slider track (keeps min/max).
+  const thinMarks = (values: number[], min: number, max: number, minGapPct = 8) => {
+    const pct = (v: number) => ((v - min) / (max - min)) * 100;
+    const kept: number[] = [];
+    for (const v of values) {
+      if (v < min || v > max) continue;
+      const last = kept[kept.length - 1];
+      if (last !== undefined && pct(v) - pct(last) < minGapPct) {
+        if (v === max) kept.pop();
+        else continue;
+      }
+      kept.push(v);
+    }
+    return kept;
+  };
   const focalMarks = (() => {
     const std = [14, 28, 35, 50, 70, 85, 100, 135, 155, 200];
-    if (!lens || isPrime) return std;
+    if (!lens || isPrime) return thinMarks(std, focalMin, focalMax);
     const gap = (focalMax - focalMin) / 10;
     const inner = std.filter(
       (v) => v > focalMin + gap && v < focalMax - gap
     );
-    return [focalMin, ...inner, focalMax];
+    return thinMarks([focalMin, ...inner, focalMax], focalMin, focalMax);
   })();
   const changeFocal = (f: number) => {
     setFocalLengthInMillimeters(f);
@@ -902,7 +917,7 @@ const cropFactor = isCustomSensor
                 max={22}
                 step={0.1}
               >
-                {[0.8, 1.4, 1.8, 2.8, 4, 5.6, 8, 11, 16, 22].filter((v) => v >= apertureMin).map((val) => (
+                {thinMarks([0.8, 1.4, 1.8, 2.8, 4, 5.6, 8, 11, 16, 22].filter((v) => v >= apertureMin), apertureMin, 22).map((val) => (
                   <SliderMark key={val} value={val} {...labelStyles}>
                     {val}
                   </SliderMark>
@@ -1188,7 +1203,7 @@ const cropFactor = isCustomSensor
           </Text>
           <Flex gap={2} mb={3}>
             {(["photo", "video"] as const).map((m) => (
-              <Button key={m} size="sm" flex={1} colorScheme={m === "video" ? "red" : "blue"}
+              <Button key={m} size="sm" flex={1} colorScheme="blue"
                 variant={shootMode === m ? "solid" : "outline"} onClick={() => setShootMode(m)}>
                 {m === "photo" ? `📷 ${t.photo}` : `🎬 ${t.video}`}
               </Button>
